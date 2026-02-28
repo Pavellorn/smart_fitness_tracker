@@ -29,23 +29,17 @@ class GradientBackground(BoxLayout):
 
     def _update_bg(self, *args):
         """
-        Метод для отрисовки градиентного фона.
+        Метод для отрисовки фона.
         Вызывается автоматически при изменении размеров виджета.
         """
         # Очищаем предыдущее содержимое canvas (область для рисования)
         self.canvas.before.clear()
         # Начинаем рисование на canvas
         with self.canvas.before:
-            # Рисуем нижний слой - светло-зеленый прямоугольник на всю область
-            Color(0.3, 0.8, 0.4, 1)  # RGB: (0.3, 0.8, 0.4), прозрачность: 1 (полностью непрозрачный)
+            # Как в ТЗ цвет #f8f9fa
+            Color(0.9725, 0.9765, 0.9804, 1)  # R, G, B, Alpha
             Rectangle(pos=self.pos, size=self.size)
             
-            # Рисуем верхний слой - полупрозрачный оранжевый прямоугольник
-            # только на верхней половине контейнера (создает эффект градиента)
-            Color(1, 0.6, 0.2, 0.5)  # Оранжевый с прозрачностью 0.5 (полупрозрачный)
-            Rectangle(pos=(self.x, self.y + self.height/2),  # Начинаем с середины по высоте
-                      size=(self.width, self.height/2))      # Занимаем только верхнюю половину
-
 # ========= АНИМИРОВАННЫЙ КРУГ =========
 class AnimatedCircle(Button):
     """
@@ -141,13 +135,13 @@ class TrainingScreen(Screen):
         arrows = BoxLayout(size_hint_y=0.1)  # Занимает 10% высоты
         
         # Создаем левую стрелку (переход к настройкам)
-        left = Button(text='←', font_size=30)
+        left = Button(text='<--', font_size=30)
         # Привязываем событие нажатия к смене экрана
         # Используем setattr для изменения атрибута current менеджера экранов
         left.bind(on_press=lambda *_: setattr(self.manager, 'current', 'settings'))
         
         # Создаем правую стрелку (переход к статистике)
-        right = Button(text='→', font_size=30)
+        right = Button(text='-->', font_size=30)
         right.bind(on_press=lambda *_: setattr(self.manager, 'current', 'stats'))
         
         # Добавляем стрелки в контейнер
