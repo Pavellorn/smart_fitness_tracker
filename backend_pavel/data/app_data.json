@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "weekly_goal": 300,
+    "notifications_enabled": true,
+    "theme": "light"
+  },
+  "stats": {
+    "2026-03-01": 30,
+    "2026-03-02": 45
+  },
+  "current_workout": {
+    "is_active": false,
+    "selected_duration": 60,
+    "started_at": null,
+    "paused_at": null
+  }
+}
