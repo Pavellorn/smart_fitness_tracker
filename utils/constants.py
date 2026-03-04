@@ -30,7 +30,7 @@ GOAL_SLIDER = {
 
 # Настройки анимации
 ANIMATION = {
-    'duration': 0.3,
+    'duration': 1,
     'font_size_small': 28,
     'font_size_big': 36
 }
