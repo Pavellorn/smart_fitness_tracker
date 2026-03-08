@@ -1,11 +1,11 @@
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivy.app import App
+
 from logic.storage_manager import StorageManager
 from logic.workout_manager import WorkoutManager
 from logic.stats_manager import StatsManager
 from logic.settings_manager import SettingsManager
-
 
 
 class MainScreen(Screen):
@@ -21,25 +21,27 @@ class SettingsScreen(Screen):
 
 
 class SmartFitnessApp(App):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.storage_manager = StorageManager()
-        self.workout_manager = WorkoutManager()
-        self.stats_manager = StatsManager()
-        self.settings_manager = SettingsManager()
-    
-    
+
     def build(self):
+
+        # backend
+        self.storage = StorageManager()
+        self.stats = StatsManager(self.storage)
+        self.workout = WorkoutManager(self.storage, self.stats)
+        self.settings = SettingsManager(self.storage)
+
+        # KV файлы
         Builder.load_file("kv_files/main_screen.kv")
         Builder.load_file("kv_files/settings_screen.kv")
         Builder.load_file("kv_files/stats_screen.kv")
-        
+
+        # ScreenManager
         screen = ScreenManager()
+
         screen.add_widget(MainScreen(name="main"))
         screen.add_widget(StatsScreen(name="stats"))
         screen.add_widget(SettingsScreen(name="settings"))
-        
-        
+
         return screen
 
 
