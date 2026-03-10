@@ -1,0 +1,25 @@
+{
+    "current_workout": {
+        "is_active": true,
+        "selected_duration": 90,
+        "elapsed_seconds": 26
+    },
+    "stats": {
+        "weekly_minutes": {
+            "mon": 190,
+            "tue": 200,
+            "wed": 20,
+            "thu": 3,
+            "fri": 14,
+            "sat": 10,
+            "sun": 0
+        },
+        "best_day": null,
+        "total_week_minutes": 0
+    },
+    "settings": {
+        "weekly_goal": 200,
+        "notifications": true,
+        "theme": "light"
+    }
+}

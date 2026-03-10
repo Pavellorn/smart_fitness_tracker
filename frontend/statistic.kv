@@ -1,0 +1,147 @@
+
+<StatsScreen>:
+    name: "stats"
+    canvas.before:
+        Color:
+            rgba: root.bg_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [30, 40, 30, 30]
+        spacing: 15
+
+        Label:
+            text: "СТАТИСТИКА"
+            font_size: '24sp'
+            bold: True
+            color: root.txt_color
+            size_hint_y: None
+            height: '60dp'
+
+        # Основная карточка с данными
+        BoxLayout:
+            orientation: 'vertical'
+            padding: [20, 20, 20, 15]
+            spacing: 10
+            canvas.before:
+                Color:
+                    rgba: 1, 1, 1, 1
+                RoundedRectangle:
+                    size: self.size
+                    pos: self.pos
+                    radius: [16, 16, 16, 16]
+
+            Label:
+                text: "За неделю: " + root.total_text
+                font_size: '20sp'
+                color: root.txt_color
+                bold: True
+                size_hint_y: None
+                height: '30dp'
+
+            Label:
+                text: root.goal_progress_text
+                font_size: '32sp'
+                bold: True
+                color: root.txt_color
+                size_hint_y: None
+                height: '40dp'
+
+            Label:
+                text: root.remaining_text
+                font_size: '15sp'
+                color: root.txt_color
+                size_hint_y: None
+                height: '20dp'
+
+            # Виджет графика (столбики)
+            WeekGraph:
+                id: week_graph
+                values: root.graph_values
+                size_hint_y: None
+                height: '140dp'
+
+            # Ряд с числами (минуты/км над каждым днем)
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: '20dp'
+                Label:
+                    text: str(int(root.graph_values[0])) if len(root.graph_values) > 0 else "0"
+                    font_size: '11sp'
+                    color: 0.298, 0.686, 0.314, 1
+                Label:
+                    text: str(int(root.graph_values[1])) if len(root.graph_values) > 1 else "0"
+                    font_size: '11sp'
+                    color: root.txt_color
+                Label:
+                    text: str(int(root.graph_values[2])) if len(root.graph_values) > 2 else "0"
+                    font_size: '11sp'
+                    color: root.txt_color
+                Label:
+                    text: str(int(root.graph_values[3])) if len(root.graph_values) > 3 else "0"
+                    font_size: '11sp'
+                    color: root.txt_color
+                Label:
+                    text: str(int(root.graph_values[4])) if len(root.graph_values) > 4 else "0"
+                    font_size: '11sp'
+                    color: root.txt_color
+                Label:
+                    text: str(int(root.graph_values[5])) if len(root.graph_values) > 5 else "0"
+                    font_size: '11sp'
+                    color: root.txt_color
+                Label:
+                    text: str(int(root.graph_values[6])) if len(root.graph_values) > 6 else "0"
+                    font_size: '11sp'
+                    color: root.txt_color
+
+            # Ряд с названиями дней
+            Label:
+                text: "Пн      Вт      Ср      Чт      Пт      Сб      Вс"
+                font_size: '13sp'
+                color: root.txt_color
+                size_hint_y: None
+                height: '25dp'
+
+            Widget:
+                size_hint_y: None
+                height: '10dp'
+
+            Button:
+                text: "Сбросить неделю"
+                background_normal: ''
+                background_color: 1.0, 0.596, 0.0, 1
+                size_hint_y: None
+                height: '45dp'
+                bold: True
+                on_release: root.reset_week()
+
+        Widget:
+            size_hint_y: 1
+
+        # Нижнее меню навигации
+        BoxLayout:
+            size_hint_y: None
+            height: '60dp'
+            spacing: 5
+
+            Button:
+                text: "Тренировка"
+                background_normal: ''
+                background_color: 0.2, 0.2, 0.3, 1
+                on_release: root.go_to("workout")
+
+            Button:
+                text: "Статистика"
+                background_normal: ''
+                background_color: 0.2, 0.7, 1, 1
+                bold: True
+
+            Button:
+                text: "Настройки"
+                background_normal: ''
+                background_color: 0.2, 0.2, 0.3, 1
+                on_release: root.go_to("settings")
