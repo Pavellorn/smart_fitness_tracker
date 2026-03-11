@@ -36,13 +36,13 @@ class WorkoutManager:
 
         current = self._current()
 
-        if not current["is_active"]:
+        if not current.get("is_active"):
             return
 
-        if current["paused_at"] is not None:
+        if current.get("paused_at") is not None:
             return
 
-        started_at = datetime.fromisoformat(current["started_at"])
+        started_at = datetime.fromisoformat(current.get("started_at"))
 
         elapsed = (self._get_now() - started_at).total_seconds()
 
@@ -58,10 +58,10 @@ class WorkoutManager:
 
         current = self._current()
 
-        if not current["is_active"]:
+        if not current.get("is_active"):
             return
 
-        if current["paused_at"] is None:
+        if current.get("paused_at") is None:
             return
 
         current["started_at"] = self._get_now().isoformat()
@@ -75,7 +75,7 @@ class WorkoutManager:
 
         current = self._current()
 
-        if not current["is_active"]:
+        if not current.get("is_active"):
             return
 
         total_elapsed = self._calculate_total_elapsed(current)
@@ -91,13 +91,13 @@ class WorkoutManager:
 
     def _calculate_total_elapsed(self, current):
 
-        elapsed = current["elapsed_seconds"]
+        elapsed = current.get("elapsed_seconds", 0)
 
-        if current["paused_at"] is None:
-
-            started_at = datetime.fromisoformat(current["started_at"])
-
-            elapsed += int((self._get_now() - started_at).total_seconds())
+        if current.get("paused_at") is None:
+            started_at_str = current.get("started_at")
+            if started_at_str:
+                started_at = datetime.fromisoformat(current.get("started_at"))
+                elapsed += int((self._get_now() - started_at).total_seconds())
 
         return elapsed
 
@@ -106,7 +106,7 @@ class WorkoutManager:
 
         current = self._current()
 
-        if not current["is_active"]:
+        if not current.get("is_active"):
             return 0
 
         duration_seconds = current["selected_duration"] * 60
@@ -122,11 +122,11 @@ class WorkoutManager:
 
         current = self.storage.get_current_workout()
 
-        return current["is_active"]
+        return current.get("is_active")
 
 
     def is_paused(self):
 
         current = self.storage.get_current_workout()
 
-        return current["paused_at"] is not None
+        return current.get("paused_at") is not None

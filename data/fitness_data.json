@@ -1,0 +1,27 @@
+{
+    "current_workout": {
+        "is_active": true,
+        "selected_duration": 30,
+        "started_at": "2026-03-11T22:07:21.010846",
+        "paused_at": null,
+        "elapsed_seconds": 0
+    },
+    "stats": {
+        "weekly_minutes": {
+            "mon": 0,
+            "tue": 0,
+            "wed": 0,
+            "thu": 0,
+            "fri": 0,
+            "sat": 0,
+            "sun": 0
+        },
+        "best_day": null,
+        "total_week_minutes": 0
+    },
+    "settings": {
+        "weekly_goal": 200,
+        "notifications": false,
+        "theme": "light"
+    }
+}

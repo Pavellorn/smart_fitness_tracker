@@ -8,14 +8,16 @@ from kivy.properties import (
 )
 from kivy.uix.screenmanager import Screen
 
-from backend.storage import (
-    load_data,
-    save_data,
-)
-
-
 class BaseFitnessScreen(Screen):
     """Базовый класс для страниц"""
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Добавляем атрибуты для бэкенда
+        self.storage = None
+        self.workout_manager = None
+        self.stats_manager = None
+        self.settings_manager = None
 
     txt_color = ListProperty([0.173, 0.243, 0.314, 1])
     bg_color = ListProperty([0.97, 0.98, 0.98, 1])
@@ -46,45 +48,158 @@ class BaseFitnessScreen(Screen):
 
 
 class WorkoutScreen(BaseFitnessScreen):
-    """Страницу с методами запуска тренировки
-    и отображения анимированного круга нужно реализовать!!!!"""
+    """Страница тренировки"""
 
     timer_text = StringProperty("00:00")
     percent_text = StringProperty("0%")
     status_text = StringProperty("Выберите тренировку")
     progress_angle = NumericProperty(0)
     today_total_text = StringProperty("Сегодня: 0 мин")
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.timer_event = None
+        self.current_workout_duration = 0
 
     def on_enter(self):
-        """Обновление общей статистики"""
-        data = load_data()
-        day_key = datetime.now().strftime("%a").lower()
-        mins = data["stats"]["weekly_minutes"].get(day_key, 0)
-        self.today_total_text = f"Сегодня: {int(mins)} мин"
+        """Обновление при входе на экран"""
+        self.update_today_stats()
+        self.restore_workout()
+
+    def update_today_stats(self):
+        """Обновление статистики за сегодня"""
+        if self.stats_manager:
+            stats = self.stats_manager.storage.get_stats()
+            day_key = self.stats_manager._get_today()
+            mins = stats["weekly_minutes"].get(day_key, 0)
+            self.today_total_text = f"Сегодня: {int(mins)} мин"
 
     def restore_workout(self):
-        """Восстановить тренировку"""
-        pass
+        """Восстановить незавершенную тренировку"""
+        if self.workout_manager and self.workout_manager.is_active():
+            current = self.workout_manager.storage.get_current_workout()
+            self.current_workout_duration = current.get('selected_duration', 0)
+            
+            if self.workout_manager.is_paused():
+                self.status_text = "Тренировка на паузе"
+                self.update_timer_display(current.get('elapsed_seconds', 0))
+            else:
+                self.status_text = "Тренировка продолжается"
+                self.start_timer()
 
     def start_workout(self, minutes):
         """Инициализация и запуск таймера тренировки"""
-        pass
+        if not self.workout_manager:
+            self.show_status("Ошибка: бэкенд не подключен")
+            return
+        
+        # Используем готовый метод бэкенда
+        self.workout_manager.start(minutes)
+        self.current_workout_duration = minutes
+        self.status_text = f"Тренировка {minutes} минут"
+        self.start_timer()
+
+    def start_timer(self):
+        """Запуск обновления таймера"""
+        if self.timer_event:
+            self.timer_event.cancel()
+        self.timer_event = Clock.schedule_interval(self.update_timer, 1)
+
+    def update_timer(self, dt):
+        """Обновление таймера каждую секунду"""
+        if not self.workout_manager:
+            return False
+
+        # Используем метод бэкенда для расчета
+        current = self.workout_manager.storage.get_current_workout()
+        elapsed = self.workout_manager._calculate_total_elapsed(current)
+        total_seconds = self.current_workout_duration * 60
+
+        # Форматируем время
+        minutes = elapsed // 60
+        seconds = elapsed % 60
+        self.timer_text = f"{minutes:02d}:{seconds:02d}"
+
+        # Обновляем прогресс
+        if total_seconds > 0:
+            percent = (elapsed / total_seconds) * 100
+            self.progress_angle = (percent / 100) * 360
+            self.percent_text = f"{int(percent)}%"
+
+        # Проверяем завершение через бэкенд
+        if self.workout_manager.get_remaining_seconds() <= 0:
+            self.finish_workout()
+            return False
+        
+        return True
+
+    def update_timer_display(self, elapsed_seconds):
+        """Обновить отображение таймера без запуска обновления"""
+        minutes = elapsed_seconds // 60
+        seconds = elapsed_seconds % 60
+        self.timer_text = f"{minutes:02d}:{seconds:02d}"
+        
+        total_seconds = self.current_workout_duration * 60
+        if total_seconds > 0:
+            percent = (elapsed_seconds / total_seconds) * 100
+            self.progress_angle = (percent / 100) * 360
+            self.percent_text = f"{int(percent)}%"
 
     def pause_workout(self):
-        """Приостановка текущего таймера и анимации"""
-        pass
+        """Приостановка текущего таймера"""
+        if self.workout_manager:
+            self.workout_manager.pause()
+            if self.timer_event:
+                self.timer_event.cancel()
+            self.status_text = "Тренировка на паузе"
 
     def resume_workout(self):
-        """Возобновление работы таймера и анимации"""
-        pass
-
-    def stop_all(self):
-        """Принудительная остановка все что происходит на экране"""
-        pass
+        """Возобновление работы таймера"""
+        if self.workout_manager:
+            self.workout_manager.resume()
+            self.status_text = "Тренировка продолжается"
+            self.start_timer()
 
     def cancel_workout(self):
-        """Полный сброс текущей тренировки (вызывается из KV)root.cancel_()"""
-        pass
+        """Полный сброс текущей тренировки"""
+        if self.timer_event:
+            self.timer_event.cancel()
+            self.timer_event = None
+        
+        if self.workout_manager:
+            # Сбрасываем через storage напрямую
+            self.workout_manager.storage.reset_current_workout()
+            self.workout_manager.storage.save()
+        
+        # Сбрасываем отображение
+        self.timer_text = "00:00"
+        self.progress_angle = 0
+        self.percent_text = "0%"
+        self.status_text = "Тренировка отменена"
+        self.update_today_stats()
+
+    def finish_workout(self):
+        """Завершение тренировки"""
+        if self.timer_event:
+            self.timer_event.cancel()
+            self.timer_event = None
+        
+        if self.workout_manager:
+            self.workout_manager.finish()
+        
+        self.status_text = "Тренировка завершена!"
+        self.show_status("Отлично! Тренировка завершена")
+        self.update_today_stats()
+        
+        # Планируем сброс статуса через 3 секунды
+        Clock.schedule_once(lambda dt: self.reset_status(), 3)
+
+    def reset_status(self):
+        """Сброс статуса после завершения"""
+        self.status_text = "Выберите тренировку"
+        self.timer_text = "00:00"
+        self.progress_angle = 0
+        self.percent_text = "0%"
 
 
 class StatsScreen(BaseFitnessScreen):
@@ -94,25 +209,56 @@ class StatsScreen(BaseFitnessScreen):
     remaining_text = StringProperty("Осталось: 0 мин")
 
     def on_enter(self):
-        data = load_data()
-        stats = data.get("stats", {}).get("weekly_minutes", {})
-        goal = data.get("settings", {}).get("weekly_goal", 200)
+        """Обновление статистики при входе на экран"""
+        self.update_stats()
+
+    def update_stats(self):
+        """Обновление всех статистических данных"""
+        if not self.stats_manager:
+            return
+
+        # Получаем данные через stats_manager
+        stats = self.stats_manager.storage.get_stats()
+        weekly = stats["weekly_minutes"]
+        settings = self.stats_manager.storage.get_settings()
+        goal = settings.get("weekly_goal", 200)
+        
+        # Формируем данные для графика
         days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-        self.graph_values = [stats.get(d, 0) for d in days]
+        self.graph_values = [weekly.get(d, 0) for d in days]
+        
+        # Рассчитываем общее время
         total = sum(self.graph_values)
-        self.total_text = f"{int(total//60)}ч {int(total%60)}мин"
-        self.goal_progress_text = f"{int((total/goal)*100 if goal > 0 else 0)}%"
-        self.remaining_text = f"Осталось: {max(0, int(goal-total))} мин"
+        hours = int(total // 60)
+        minutes = int(total % 60)
+        self.total_text = f"{hours}ч {minutes}мин"
+        
+        # Рассчитываем прогресс к цели
+        if goal > 0:
+            progress_percent = int((total / goal) * 100)
+            self.goal_progress_text = f"{progress_percent}%"
+            remaining = max(0, goal - total)
+            self.remaining_text = f"Осталось: {int(remaining)} мин"
+        else:
+            self.goal_progress_text = "0%"
+            self.remaining_text = "Цель не установлена"
+        
+        # Обновляем график
         if "week_graph" in self.ids:
             self.ids.week_graph.values = self.graph_values
 
     def reset_week(self):
-        data = load_data()
-        data["stats"]["weekly_minutes"] = {
-            d: 0 for d in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-        }
-        save_data(data)
-        self.on_enter()
+        """Сброс статистики за неделю"""
+        if self.stats_manager:
+            # Сбрасываем через storage
+            stats = self.stats_manager.storage.get_stats()
+            stats["weekly_minutes"] = {
+                d: 0 for d in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+            }
+            self.stats_manager.storage.update_stats(stats)
+            self.stats_manager.storage.save()
+            self.update_stats()
+            self.show_status("Статистика сброшена")
 
 
 class SettingsScreen(BaseFitnessScreen):
@@ -121,28 +267,61 @@ class SettingsScreen(BaseFitnessScreen):
     notif_state = BooleanProperty(True)
 
     def on_enter(self):
-        data = load_data().get("settings", {})
-        self.goal_value = data.get("weekly_goal", 200)
-        self.notif_state = data.get("notifications", True)
+        """Загрузка настроек при входе на экран"""
+        self.load_settings()
+
+    def load_settings(self):
+        """Загрузка настроек из бэкенда"""
+        if not self.settings_manager:
+            return
+        
+        settings = self.settings_manager.storage.get_settings()
+        self.goal_value = settings.get("weekly_goal", 200)
+        self.notif_state = settings.get("notifications", True)
         self.goal_text = f"{int(self.goal_value)} мин/неделю"
 
     def on_goal_change(self, value, instance=None):
+        """Обработка изменения цели"""
         self.goal_value = value
         self.goal_text = f"{int(value)} мин/неделю"
 
     def save_current_settings(self):
-        data = load_data()
-        data["settings"]["weekly_goal"] = int(self.goal_value)
-        data["settings"]["notifications"] = self.notif_state
-        save_data(data)
+        """Сохранение текущих настроек"""
+        if not self.settings_manager:
+            return
+        
+        # Сохраняем через settings_manager
+        settings = self.settings_manager.storage.get_settings()
+        settings["weekly_goal"] = int(self.goal_value)
+        settings["notifications"] = self.notif_state
+        self.settings_manager.storage.update_settings(settings)
+        self.settings_manager.storage.save()
+        
         self.show_status("Сохранено!")
 
     def reset_settings(self):
-        data = load_data()
-        data["settings"] = {"weekly_goal": 200, "notifications": True, "theme": "light"}
-        save_data(data)
-        self.on_enter()
-        self.show_status("Сброшено")
+        """Сброс настроек к значениям по умолчанию"""
+        if self.settings_manager:
+            default = {
+                "weekly_goal": 200,
+                "notifications": True,
+                "theme": "light"
+            }
+            self.settings_manager.storage.update_settings(default)
+            self.settings_manager.storage.save()
+            self.load_settings()
+            self.show_status("Сброшено")
 
     def toggle_notifications(self):
+        """Переключение уведомлений"""
         self.notif_state = not self.notif_state
+        self.save_current_settings()
+        
+    def reset_week_only(self):
+        """Сброс только недельной статистики (для кнопки в настройках)"""
+        if self.stats_manager:
+            self.stats_manager.storage.get_stats()["weekly_minutes"] = {
+                d: 0 for d in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+            }
+            self.stats_manager.storage.save()
+            self.show_status("Неделя сброшена")

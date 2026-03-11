@@ -5,10 +5,12 @@ import os
 class StorageManager:
 
     def __init__(self):
-        self.file_path = "backend_pavel/data/data.json"
+        # Получаем абсолютный путь. без этого ловил ошибки в нахождение fitness_data.json
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.file_path = os.path.join(base_dir, "data", "fitness_data.json")
+
         self.data = {}
         self.load()
-
 
     def _default_data(self):
 
