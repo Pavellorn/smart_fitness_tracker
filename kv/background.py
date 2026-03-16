@@ -13,7 +13,7 @@ class Background(BoxLayout):
     Контейнер с однотонным фоном.
     Автоматически обновляет фон при изменении размера.
     """
-    
+
     def __init__(self, **kwargs):
         """
         Инициализация фона.
@@ -30,5 +30,7 @@ class Background(BoxLayout):
         """
         self.canvas.before.clear()
         with self.canvas.before:
-            Color(*COLORS['text']) # тут просто образаемся по ключу и распаковываем значения 
+            Color(
+                *COLORS["text"]
+            )  # тут просто образаемся по ключу и распаковываем значения
             Rectangle(pos=self.pos, size=self.size)
