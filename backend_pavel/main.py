@@ -28,6 +28,7 @@ class SmartFitnessApp(App):
         self.storage = StorageManager()
         self.stats = StatsManager(self.storage)
         self.workout = WorkoutManager(self.storage, self.stats)
+        self.workout.resume_if_needed() # добавил эту строку
         self.settings = SettingsManager(self.storage)
 
         # KV файлы
