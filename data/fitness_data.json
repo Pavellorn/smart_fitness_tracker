@@ -2,26 +2,26 @@
     "current_workout": {
         "is_active": true,
         "selected_duration": 30,
-        "started_at": "2026-03-11T22:07:21.010846",
+        "started_at": "2026-03-17T22:26:11.263967",
         "paused_at": null,
         "elapsed_seconds": 0
     },
     "stats": {
         "weekly_minutes": {
-            "mon": 0,
-            "tue": 0,
-            "wed": 0,
-            "thu": 0,
-            "fri": 0,
+            "mon": 200,
+            "tue": 150,
+            "wed": 75,
+            "thu": 60,
+            "fri": 218,
             "sat": 0,
             "sun": 0
         },
-        "best_day": null,
-        "total_week_minutes": 0
+        "best_day": "fri",
+        "total_week_minutes": 703
     },
     "settings": {
-        "weekly_goal": 200,
-        "notifications": false,
+        "weekly_goal": 400,
+        "notifications": true,
         "theme": "light"
     }
 }

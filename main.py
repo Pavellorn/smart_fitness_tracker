@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(__file__))
 from logic.storage_manager import StorageManager
 from logic.workout_manager import WorkoutManager
 from logic.stats_manager import StatsManager
-from logic.settings_manager import SettingsManager  # теперь импорт работает!
+from logic.settings_manager import SettingsManager
 
 # Импорты из фронтенда (UI)
 from frontend.screens import WorkoutScreen, StatsScreen, SettingsScreen
