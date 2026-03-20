@@ -7,10 +7,8 @@ class WorkoutManager:
         self.storage = storage
         self.stats_manager = stats_manager
 
-
     def _get_now(self):
         return datetime.now()
-
 
     def start(self, duration: int):
 
@@ -27,10 +25,9 @@ class WorkoutManager:
 
         self.storage.update_current_workout(current)
         self.storage.save()
-    
+
     def _current(self):
         return self.storage.get_current_workout()
-
 
     def pause(self):
 
@@ -53,7 +50,6 @@ class WorkoutManager:
         self.storage.update_current_workout(current)
         self.storage.save()
 
-
     def resume(self):
 
         current = self._current()
@@ -69,7 +65,6 @@ class WorkoutManager:
 
         self.storage.update_current_workout(current)
         self.storage.save()
-
 
     def finish(self):
 
@@ -88,7 +83,6 @@ class WorkoutManager:
         self.storage.reset_current_workout()
         self.storage.save()
 
-
     def _calculate_total_elapsed(self, current):
 
         elapsed = current.get("elapsed_seconds", 0)
@@ -100,7 +94,6 @@ class WorkoutManager:
                 elapsed += int((self._get_now() - started_at).total_seconds())
 
         return elapsed
-
 
     def get_remaining_seconds(self):
 
@@ -117,13 +110,11 @@ class WorkoutManager:
 
         return max(0, remaining)
 
-
     def is_active(self):
 
         current = self.storage.get_current_workout()
 
         return current.get("is_active")
-
 
     def is_paused(self):
 

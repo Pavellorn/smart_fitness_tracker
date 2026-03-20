@@ -8,9 +8,10 @@ from kivy.properties import (
 )
 from kivy.uix.screenmanager import Screen
 
+
 class BaseFitnessScreen(Screen):
     """Базовый класс для страниц"""
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Добавляем атрибуты для бэкенда
@@ -55,11 +56,23 @@ class WorkoutScreen(BaseFitnessScreen):
     status_text = StringProperty("Выберите тренировку")
     progress_angle = NumericProperty(0)
     today_total_text = StringProperty("Сегодня: 0 мин")
-    
+
+    # Создаем свойство для цвета (изначально зеленый)
+    circle_color = ListProperty([0.298, 0.686, 0.314, 1])
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.timer_event = None
         self.current_workout_duration = 0
+
+    def on_progress_angle(self, instance, value):
+        # value — это угол от 0 до 360
+        if value < 120:  # Первая треть
+            self.circle_color = [0.298, 0.686, 0.314, 1]  # Зеленый
+        elif value < 240:  # Вторая треть
+            self.circle_color = [1.0, 0.596, 0.0, 1]  # Оранжевый
+        else:  # Финал
+            self.circle_color = [0.85, 0.3, 0.3, 1]  # Красный
 
     def on_enter(self):
         """Обновление при входе на экран"""
@@ -78,11 +91,11 @@ class WorkoutScreen(BaseFitnessScreen):
         """Восстановить незавершенную тренировку"""
         if self.workout_manager and self.workout_manager.is_active():
             current = self.workout_manager.storage.get_current_workout()
-            self.current_workout_duration = current.get('selected_duration', 0)
-            
+            self.current_workout_duration = current.get("selected_duration", 0)
+
             if self.workout_manager.is_paused():
                 self.status_text = "Тренировка на паузе"
-                self.update_timer_display(current.get('elapsed_seconds', 0))
+                self.update_timer_display(current.get("elapsed_seconds", 0))
             else:
                 self.status_text = "Тренировка продолжается"
                 self.start_timer()
@@ -92,7 +105,7 @@ class WorkoutScreen(BaseFitnessScreen):
         if not self.workout_manager:
             self.show_status("Ошибка: бэкенд не подключен")
             return
-        
+
         # Используем готовый метод бэкенда
         self.workout_manager.start(minutes)
         self.current_workout_duration = minutes
@@ -130,7 +143,7 @@ class WorkoutScreen(BaseFitnessScreen):
         if self.workout_manager.get_remaining_seconds() <= 0:
             self.finish_workout()
             return False
-        
+
         return True
 
     def update_timer_display(self, elapsed_seconds):
@@ -138,7 +151,7 @@ class WorkoutScreen(BaseFitnessScreen):
         minutes = elapsed_seconds // 60
         seconds = elapsed_seconds % 60
         self.timer_text = f"{minutes:02d}:{seconds:02d}"
-        
+
         total_seconds = self.current_workout_duration * 60
         if total_seconds > 0:
             percent = (elapsed_seconds / total_seconds) * 100
@@ -165,12 +178,12 @@ class WorkoutScreen(BaseFitnessScreen):
         if self.timer_event:
             self.timer_event.cancel()
             self.timer_event = None
-        
+
         if self.workout_manager:
             # Сбрасываем через storage напрямую
             self.workout_manager.storage.reset_current_workout()
             self.workout_manager.storage.save()
-        
+
         # Сбрасываем отображение
         self.timer_text = "00:00"
         self.progress_angle = 0
@@ -183,14 +196,14 @@ class WorkoutScreen(BaseFitnessScreen):
         if self.timer_event:
             self.timer_event.cancel()
             self.timer_event = None
-        
+
         if self.workout_manager:
             self.workout_manager.finish()
-        
+
         self.status_text = "Тренировка завершена!"
         self.show_status("Отлично! Тренировка завершена")
         self.update_today_stats()
-        
+
         # Планируем сброс статуса через 3 секунды
         Clock.schedule_once(lambda dt: self.reset_status(), 3)
 
@@ -222,17 +235,17 @@ class StatsScreen(BaseFitnessScreen):
         weekly = stats["weekly_minutes"]
         settings = self.stats_manager.storage.get_settings()
         goal = settings.get("weekly_goal", 200)
-        
+
         # Формируем данные для графика
         days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
         self.graph_values = [weekly.get(d, 0) for d in days]
-        
+
         # Рассчитываем общее время
         total = sum(self.graph_values)
         hours = int(total // 60)
         minutes = int(total % 60)
         self.total_text = f"{hours}ч {minutes}мин"
-        
+
         # Рассчитываем прогресс к цели
         if goal > 0:
             progress_percent = int((total / goal) * 100)
@@ -242,7 +255,7 @@ class StatsScreen(BaseFitnessScreen):
         else:
             self.goal_progress_text = "0%"
             self.remaining_text = "Цель не установлена"
-        
+
         # Обновляем график
         if "week_graph" in self.ids:
             self.ids.week_graph.values = self.graph_values
@@ -274,7 +287,7 @@ class SettingsScreen(BaseFitnessScreen):
         """Загрузка настроек из бэкенда"""
         if not self.settings_manager:
             return
-        
+
         settings = self.settings_manager.storage.get_settings()
         self.goal_value = settings.get("weekly_goal", 200)
         self.notif_state = settings.get("notifications", True)
@@ -289,24 +302,20 @@ class SettingsScreen(BaseFitnessScreen):
         """Сохранение текущих настроек"""
         if not self.settings_manager:
             return
-        
+
         # Сохраняем через settings_manager
         settings = self.settings_manager.storage.get_settings()
         settings["weekly_goal"] = int(self.goal_value)
         settings["notifications"] = self.notif_state
         self.settings_manager.storage.update_settings(settings)
         self.settings_manager.storage.save()
-        
+
         self.show_status("Сохранено!")
 
     def reset_settings(self):
         """Сброс настроек к значениям по умолчанию"""
         if self.settings_manager:
-            default = {
-                "weekly_goal": 200,
-                "notifications": True,
-                "theme": "light"
-            }
+            default = {"weekly_goal": 200, "notifications": True, "theme": "light"}
             self.settings_manager.storage.update_settings(default)
             self.settings_manager.storage.save()
             self.load_settings()
@@ -316,7 +325,7 @@ class SettingsScreen(BaseFitnessScreen):
         """Переключение уведомлений"""
         self.notif_state = not self.notif_state
         self.save_current_settings()
-        
+
     def reset_week_only(self):
         """Сброс только недельной статистики (для кнопки в настройках)"""
         if self.stats_manager:
