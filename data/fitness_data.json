@@ -1,8 +1,8 @@
 {
     "current_workout": {
-        "is_active": true,
-        "selected_duration": 30,
-        "started_at": "2026-03-17T22:26:11.263967",
+        "is_active": false,
+        "selected_duration": null,
+        "started_at": null,
         "paused_at": null,
         "elapsed_seconds": 0
     },
@@ -10,14 +10,14 @@
         "weekly_minutes": {
             "mon": 200,
             "tue": 150,
-            "wed": 75,
+            "wed": 1427,
             "thu": 60,
             "fri": 218,
             "sat": 0,
             "sun": 0
         },
-        "best_day": "fri",
-        "total_week_minutes": 703
+        "best_day": "wed",
+        "total_week_minutes": 2055
     },
     "settings": {
         "weekly_goal": 400,
