@@ -8,19 +8,19 @@
     },
     "stats": {
         "weekly_minutes": {
-            "mon": 200,
+            "mon": 100,
             "tue": 150,
-            "wed": 1427,
-            "thu": 60,
-            "fri": 218,
-            "sat": 0,
-            "sun": 0
+            "wed": 300,
+            "thu": 30,
+            "fri": 40,
+            "sat": 20,
+            "sun": 90
         },
         "best_day": "wed",
-        "total_week_minutes": 2055
+        "total_week_minutes": 730
     },
     "settings": {
-        "weekly_goal": 400,
+        "weekly_goal": 200,
         "notifications": true,
         "theme": "light"
     }

@@ -231,8 +231,8 @@ class WorkoutScreen(BaseFitnessScreen):
         Animation.cancel_all(heart)
         
         # Увеличить → уменьшить → повторять
-        anim = Animation(font_size=150, duration=0.3) + \
-               Animation(font_size=80, duration=0.3)
+        anim = Animation(font_size=240, duration=0.3) + \
+               Animation(font_size=200, duration=0.3)
         anim.repeat = True
         anim.start(heart)
     
@@ -241,7 +241,7 @@ class WorkoutScreen(BaseFitnessScreen):
         heart = self.ids.heart_icon
         Animation.cancel_all(heart)
         
-        heart.font_size = 80  # Возвращаем как было
+        heart.font_size = 200  # Возвращаем как было
     
 class StatsScreen(BaseFitnessScreen):
     total_text = StringProperty("0ч 0мин")
