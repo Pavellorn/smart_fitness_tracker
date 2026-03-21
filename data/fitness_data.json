@@ -10,18 +10,18 @@
         "weekly_minutes": {
             "mon": 100,
             "tue": 150,
-            "wed": 300,
-            "thu": 30,
-            "fri": 40,
-            "sat": 20,
-            "sun": 90
+            "wed": 50,
+            "thu": 45,
+            "fri": 0,
+            "sat": 0,
+            "sun": 0
         },
         "best_day": "wed",
         "total_week_minutes": 730
     },
     "settings": {
         "weekly_goal": 200,
-        "notifications": true,
+        "notifications": false,
         "theme": "light"
     }
 }
