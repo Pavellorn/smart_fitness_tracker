@@ -1,5 +1,6 @@
 from datetime import datetime
 from kivy.clock import Clock
+from kivy.animation import Animation
 from kivy.properties import (
     StringProperty,
     NumericProperty,
@@ -99,6 +100,7 @@ class WorkoutScreen(BaseFitnessScreen):
             else:
                 self.status_text = "Тренировка продолжается"
                 self.start_timer()
+                self.start_heart_beat()  
 
     def start_workout(self, minutes):
         """Инициализация и запуск таймера тренировки"""
@@ -165,14 +167,16 @@ class WorkoutScreen(BaseFitnessScreen):
             if self.timer_event:
                 self.timer_event.cancel()
             self.status_text = "Тренировка на паузе"
-
+            self.stop_heart_beat()
+            
     def resume_workout(self):
         """Возобновление работы таймера"""
         if self.workout_manager:
             self.workout_manager.resume()
             self.status_text = "Тренировка продолжается"
             self.start_timer()
-
+            self.start_heart_beat()
+            
     def cancel_workout(self):
         """Полный сброс текущей тренировки"""
         if self.timer_event:
@@ -191,6 +195,8 @@ class WorkoutScreen(BaseFitnessScreen):
         self.status_text = "Тренировка отменена"
         self.update_today_stats()
 
+        self.stop_heart_beat()
+        
     def finish_workout(self):
         """Завершение тренировки"""
         if self.timer_event:
@@ -204,17 +210,39 @@ class WorkoutScreen(BaseFitnessScreen):
         self.show_status("Отлично! Тренировка завершена")
         self.update_today_stats()
 
+        self.stop_heart_beat()
+        
         # Планируем сброс статуса через 3 секунды
         Clock.schedule_once(lambda dt: self.reset_status(), 3)
 
+        
     def reset_status(self):
         """Сброс статуса после завершения"""
         self.status_text = "Выберите тренировку"
         self.timer_text = "00:00"
         self.progress_angle = 0
         self.percent_text = "0%"
-
-
+        
+        
+#ТУТ НАСТРОЙКИ СЕРДЦА
+    def start_heart_beat(self):
+        """Запускает биение сердца (увеличивается и уменьшается)"""
+        heart = self.ids.heart_icon
+        Animation.cancel_all(heart)
+        
+        # Увеличить → уменьшить → повторять
+        anim = Animation(font_size=240, duration=0.3) + \
+               Animation(font_size=200, duration=0.3)
+        anim.repeat = True
+        anim.start(heart)
+    
+    def stop_heart_beat(self):
+        """Останавливает биение"""
+        heart = self.ids.heart_icon
+        Animation.cancel_all(heart)
+        
+        heart.font_size = 200  # Возвращаем как было
+    
 class StatsScreen(BaseFitnessScreen):
     total_text = StringProperty("0ч 0мин")
     graph_values = ListProperty([0] * 7)
