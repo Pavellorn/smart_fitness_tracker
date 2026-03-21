@@ -88,31 +88,20 @@ class WorkoutScreen(BaseFitnessScreen):
             mins = stats["weekly_minutes"].get(day_key, 0)
             self.today_total_text = f"Сегодня: {int(mins)} мин"
 
-    def restore_workout(self):
-        """Восстановить незавершенную тренировку"""
-        if self.workout_manager and self.workout_manager.is_active():
-            current = self.workout_manager.storage.get_current_workout()
-            self.current_workout_duration = current.get("selected_duration", 0)
-
-            if self.workout_manager.is_paused():
-                self.status_text = "Тренировка на паузе"
-                self.update_timer_display(current.get("elapsed_seconds", 0))
-            else:
-                self.status_text = "Тренировка продолжается"
-                self.start_timer()
-                self.start_heart_beat()  
-
     def start_workout(self, minutes):
         """Инициализация и запуск таймера тренировки"""
         if not self.workout_manager:
             self.show_status("Ошибка: бэкенд не подключен")
             return
 
-        # Используем готовый метод бэкенда
         self.workout_manager.start(minutes)
         self.current_workout_duration = minutes
         self.status_text = f"Тренировка {minutes} минут"
+
+        # Показываем полное время сразу (было 00:00, стало 30:00)
+        self.timer_text = f"{minutes:02d}:00"
         self.start_timer()
+        self.start_heart_beat()
 
     def start_timer(self):
         """Запуск обновления таймера"""
@@ -125,36 +114,39 @@ class WorkoutScreen(BaseFitnessScreen):
         if not self.workout_manager:
             return False
 
-        # Используем метод бэкенда для расчета
-        current = self.workout_manager.storage.get_current_workout()
-        elapsed = self.workout_manager._calculate_total_elapsed(current)
+        # Получаем ОСТАВШЕЕСЯ время вместо прошедшего
+        remaining = self.workout_manager.get_remaining_seconds()
         total_seconds = self.current_workout_duration * 60
 
-        # Форматируем время
-        minutes = elapsed // 60
-        seconds = elapsed % 60
+        # Форматируем ОСТАВШЕЕСЯ время
+        minutes = remaining // 60
+        seconds = remaining % 60
         self.timer_text = f"{minutes:02d}:{seconds:02d}"
 
-        # Обновляем прогресс
+        # Прогресс считаем от прошедшего времени
         if total_seconds > 0:
+            elapsed = total_seconds - remaining
             percent = (elapsed / total_seconds) * 100
             self.progress_angle = (percent / 100) * 360
             self.percent_text = f"{int(percent)}%"
 
-        # Проверяем завершение через бэкенд
-        if self.workout_manager.get_remaining_seconds() <= 0:
+        # Проверяем завершение
+        if remaining <= 0:
+            self.timer_text = "00:00"
             self.finish_workout()
             return False
 
         return True
 
     def update_timer_display(self, elapsed_seconds):
-        """Обновить отображение таймера без запуска обновления"""
-        minutes = elapsed_seconds // 60
-        seconds = elapsed_seconds % 60
+        """Обновить отображение таймера без запуска (для паузы)"""
+        total_seconds = self.current_workout_duration * 60
+        remaining = max(0, total_seconds - elapsed_seconds)
+
+        minutes = remaining // 60
+        seconds = remaining % 60
         self.timer_text = f"{minutes:02d}:{seconds:02d}"
 
-        total_seconds = self.current_workout_duration * 60
         if total_seconds > 0:
             percent = (elapsed_seconds / total_seconds) * 100
             self.progress_angle = (percent / 100) * 360
@@ -168,7 +160,7 @@ class WorkoutScreen(BaseFitnessScreen):
                 self.timer_event.cancel()
             self.status_text = "Тренировка на паузе"
             self.stop_heart_beat()
-            
+
     def resume_workout(self):
         """Возобновление работы таймера"""
         if self.workout_manager:
@@ -176,7 +168,7 @@ class WorkoutScreen(BaseFitnessScreen):
             self.status_text = "Тренировка продолжается"
             self.start_timer()
             self.start_heart_beat()
-            
+
     def cancel_workout(self):
         """Полный сброс текущей тренировки"""
         if self.timer_event:
@@ -196,7 +188,7 @@ class WorkoutScreen(BaseFitnessScreen):
         self.update_today_stats()
 
         self.stop_heart_beat()
-        
+
     def finish_workout(self):
         """Завершение тренировки"""
         if self.timer_event:
@@ -211,38 +203,72 @@ class WorkoutScreen(BaseFitnessScreen):
         self.update_today_stats()
 
         self.stop_heart_beat()
-        
+
         # Планируем сброс статуса через 3 секунды
         Clock.schedule_once(lambda dt: self.reset_status(), 3)
 
-        
     def reset_status(self):
         """Сброс статуса после завершения"""
         self.status_text = "Выберите тренировку"
         self.timer_text = "00:00"
         self.progress_angle = 0
         self.percent_text = "0%"
-        
-        
-#ТУТ НАСТРОЙКИ СЕРДЦА
+
+    # ТУТ НАСТРОЙКИ СЕРДЦА
     def start_heart_beat(self):
         """Запускает биение сердца (увеличивается и уменьшается)"""
         heart = self.ids.heart_icon
         Animation.cancel_all(heart)
-        
+
         # Увеличить → уменьшить → повторять
-        anim = Animation(font_size=240, duration=0.3) + \
-               Animation(font_size=200, duration=0.3)
+        anim = Animation(font_size=240, duration=0.3) + Animation(
+            font_size=200, duration=0.3
+        )
         anim.repeat = True
         anim.start(heart)
-    
+
     def stop_heart_beat(self):
         """Останавливает биение"""
         heart = self.ids.heart_icon
         Animation.cancel_all(heart)
-        
+
         heart.font_size = 200  # Возвращаем как было
-    
+
+    def restore_workout(self):
+        """Восстановить незавершенную тренировку"""
+        if not self.workout_manager or not self.workout_manager.is_active():
+            return
+
+        current = self.workout_manager.storage.get_current_workout()
+        self.current_workout_duration = current.get("selected_duration", 0)
+
+        # Защита: если время вышло — завершаем, а не восстанавливаем
+        remaining = self.workout_manager.get_remaining_seconds()
+        if remaining <= 0:
+            self.finish_workout()
+            return
+
+        if self.workout_manager.is_paused():
+            self.status_text = "Тренировка на паузе"
+            self.update_timer_display(current.get("elapsed_seconds", 0))
+        else:
+            self.status_text = "Тренировка продолжается"
+            self.start_timer()
+            self.start_heart_beat()
+
+    def _calculate_total_elapsed(self, current):
+        elapsed = current.get("elapsed_seconds", 0)
+
+        if current.get("paused_at") is None:
+            started_at_str = current.get("started_at")
+            if started_at_str:
+                started_at = datetime.fromisoformat(started_at_str)
+                diff = int((self._get_now() - started_at).total_seconds())
+                elapsed += max(0, diff)  # ← защита от отрицательных значений
+
+        return max(0, elapsed)  # ← дополнительная защита
+
+
 class StatsScreen(BaseFitnessScreen):
     total_text = StringProperty("0ч 0мин")
     graph_values = ListProperty([0] * 7)
