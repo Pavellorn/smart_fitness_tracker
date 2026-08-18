@@ -1,0 +1,44 @@
+#:import dp kivy.metrics.dp
+
+# A restrained, editorial visual language: warm paper, graphite and terracotta.
+<Button>:
+    background_normal: ''
+    background_down: ''
+    border: 0, 0, 0, 0
+    color: 1, 1, 1, 1
+    font_size: '14sp'
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(12),]
+    canvas.after:
+        Color:
+            rgba: 0, 0, 0, .06
+        Line:
+            rounded_rectangle: (self.x, self.y, self.width, self.height, dp(12))
+            width: 1
+
+<Card@BoxLayout>:
+    padding: dp(20)
+    canvas.before:
+        Color:
+            rgba: 0.13, 0.16, 0.17, .06
+        RoundedRectangle:
+            pos: self.x, self.y - dp(3)
+            size: self.size
+            radius: [dp(20),]
+        Color:
+            rgba: 1, .995, .98, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20),]
+
+<SpinnerOption>:
+    background_normal: ''
+    background_color: .25, .29, .42, 1
+    color: .96, .97, .98, 1
+    font_size: '15sp'

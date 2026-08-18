@@ -58,19 +58,19 @@ class UnifiedFitnessApp(App):
     """Объединенное приложение"""
 
     def build(self):
+        self.title = "Smart Fitness"
         # 1. Регистрируем кастомные виджеты из фронтенда
         Factory.register("WeekGraph", cls=WeekGraph)
         Factory.register("ProgressCircle", cls=ProgressCircle)
 
         # 2. ИНИЦИАЛИЗИРУЕМ БЭКЕНД (ГОТОВАЯ ЛОГИКА)
-        self.storage = StorageManager()  # БЕЗ АРГУМЕНТОВ
+        self.storage = StorageManager(self.user_data_dir)
         self.stats = StatsManager(self.storage)  # С ARG
         self.workout = WorkoutManager(self.storage, self.stats)  # С ARG
         self.settings = SettingsManager(self.storage)  # ТЕПЕРЬ РАБОТАЕТ!
         # 2.5 СБРОС НЕЗАВЕРШЁННОЙ ТРЕНИРОВКИ ПРИ ЗАПУСКЕ
-        self.storage.reset_current_workout()
-        self.storage.save()
         # 3. ЗАГРУЖАЕМ KV ФАЙЛЫ ИЗ ФРОНТЕНДА
+        Builder.load_file(os.path.join("frontend", "theme.kv"))
         Builder.load_file(os.path.join("frontend", "workout.kv"))
         Builder.load_file(os.path.join("frontend", "statistic.kv"))
         Builder.load_file(os.path.join("frontend", "settings.kv"))
@@ -102,6 +102,11 @@ class UnifiedFitnessApp(App):
         sm.add_widget(workout_screen)
         sm.add_widget(stats_screen)
         sm.add_widget(settings_screen)
+
+        if self.storage.get_settings().get("theme") == "dark":
+            for screen in sm.screens:
+                screen.bg_color = [0.105, 0.125, 0.13, 1]
+                screen.txt_color = [0.95, 0.93, 0.89, 1]
 
         return sm
 

@@ -118,3 +118,24 @@ class TestWorkoutManager:
 
         assert first_start == second_start
         assert tmp_storage.get_current_workout()["selected_duration"] == 30
+
+    def test_start_rejects_invalid_duration(self, workout_mgr):
+        with pytest.raises(ValueError):
+            workout_mgr.start(0)
+
+    def test_pause_preserves_elapsed_time(self, workout_mgr, tmp_storage):
+        workout_mgr.start(30)
+        start = datetime.fromisoformat(tmp_storage.get_current_workout()["started_at"])
+        workout_mgr._get_now = lambda: start + timedelta(seconds=75)
+
+        assert workout_mgr.pause() is True
+        current = tmp_storage.get_current_workout()
+        assert current["elapsed_seconds"] == 75
+        assert workout_mgr.is_paused() is True
+
+    def test_cancel_does_not_add_statistics(self, workout_mgr, tmp_storage, stats_manager_mock):
+        workout_mgr.start(30)
+        assert workout_mgr.cancel() is True
+
+        assert tmp_storage.get_current_workout()["is_active"] is False
+        stats_manager_mock.add_workout.assert_not_called()

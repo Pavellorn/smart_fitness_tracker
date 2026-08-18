@@ -1,0 +1,2 @@
+pytest>=8.0
+buildozer>=1.5; platform_system != "Windows"

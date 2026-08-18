@@ -21,8 +21,8 @@ class BaseFitnessScreen(Screen):
         self.stats_manager = None
         self.settings_manager = None
 
-    txt_color = ListProperty([0.173, 0.243, 0.314, 1])
-    bg_color = ListProperty([0.97, 0.98, 0.98, 1])
+    txt_color = ListProperty([0.12, 0.15, 0.16, 1])
+    bg_color = ListProperty([0.965, 0.949, 0.925, 1])
 
     def go_to(self, screen_name):
         sm = self.manager
@@ -35,13 +35,18 @@ class BaseFitnessScreen(Screen):
         sm.current = screen_name
 
     def toggle_theme(self):
-        if self.bg_color == [0.973, 0.976, 0.980, 1]:
-            new_bg, new_txt = [0.1, 0.1, 0.12, 1], [0.95, 0.95, 0.97, 1]
+        is_dark = self.settings_manager and self.settings_manager.get_settings().get("theme") == "dark"
+        if not is_dark:
+            new_bg, new_txt = [0.105, 0.125, 0.13, 1], [0.95, 0.93, 0.89, 1]
         else:
-            new_bg, new_txt = [0.973, 0.976, 0.980, 1], [0.173, 0.243, 0.314, 1]
+            new_bg, new_txt = [0.965, 0.949, 0.925, 1], [0.12, 0.15, 0.16, 1]
         for screen in self.manager.screens:
             screen.bg_color = new_bg
             screen.txt_color = new_txt
+        if self.settings_manager:
+            settings = self.settings_manager.get_settings()
+            settings["theme"] = "dark" if new_bg[0] < 0.5 else "light"
+            self.settings_manager.update_settings(settings)
 
     def show_status(self, text):
         if "save_status" in self.ids:
@@ -60,6 +65,17 @@ class WorkoutScreen(BaseFitnessScreen):
 
     # Создаем свойство для цвета (изначально зеленый)
     circle_color = ListProperty([0.298, 0.686, 0.314, 1])
+    exercise_name = StringProperty("Приседания со штангой")
+    set_weight = NumericProperty(60)
+    set_reps = NumericProperty(8)
+    session_sets = ListProperty([])
+    set_summary = StringProperty("Подходов пока нет")
+    workout_mode = StringProperty("Подходы")
+    intensity = StringProperty("Средняя нагрузка")
+    training_type = StringProperty("Силовая")
+    timed_duration = NumericProperty(45)
+    calories_text = StringProperty("≈ 315 ккал")
+    strength_calories_text = StringProperty("≈ 24 ккал за подход")
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -78,7 +94,59 @@ class WorkoutScreen(BaseFitnessScreen):
     def on_enter(self):
         """Обновление при входе на экран"""
         self.update_today_stats()
-        self.restore_workout()
+        # This screen no longer has a countdown. A strength session is simply
+        # restored as its recorded sets, so never invoke legacy timer logic.
+        self.refresh_sets()
+
+    def change_weight(self, delta):
+        self.set_weight = max(0, self.set_weight + delta)
+        self.update_strength_calories()
+
+    def change_reps(self, delta):
+        self.set_reps = max(1, int(self.set_reps + delta))
+        self.update_strength_calories()
+
+    def update_strength_calories(self):
+        # A transparent, conservative estimate based on the current set volume.
+        estimate = max(3, round(self.set_weight * self.set_reps * 0.05))
+        self.strength_calories_text = f"≈ {estimate} ккал за подход"
+
+    def change_duration(self, delta):
+        self.timed_duration = max(10, min(180, self.timed_duration + delta))
+        self.update_calories()
+
+    def update_calories(self):
+        per_minute = {"Низкая нагрузка": 4, "Средняя нагрузка": 7, "Интенсивная нагрузка": 10}
+        self.calories_text = f"≈ {int(self.timed_duration * per_minute.get(self.intensity, 7))} ккал"
+
+    def submit_workout(self):
+        if self.workout_mode == "Подходы":
+            self.add_strength_set()
+        elif self.workout_mode == "По времени":
+            self.start_workout(int(self.timed_duration))
+            self.status_text = f"{self.intensity}: таймер запущен"
+        else:
+            self.status_text = f"Выбран тип: {self.training_type}. Добавьте подход или выберите режим времени."
+
+    def add_strength_set(self):
+        if not self.workout_manager:
+            return
+        try:
+            self.workout_manager.add_set(self.exercise_name, self.set_weight, int(self.set_reps))
+        except ValueError as error:
+            self.status_text = str(error)
+            return
+        self.status_text = "Подход добавлен"
+        self.update_strength_calories()
+        self.refresh_sets()
+
+    def refresh_sets(self):
+        if not self.workout_manager:
+            return
+        records = self.workout_manager.storage.get_current_workout().get("sets", [])
+        self.session_sets = records[-3:][::-1]
+        count = len(records)
+        self.set_summary = f"{count} подходов в этой тренировке" if count else "Подходов пока нет"
 
     def update_today_stats(self):
         """Обновление статистики за сегодня"""
@@ -94,7 +162,9 @@ class WorkoutScreen(BaseFitnessScreen):
             self.show_status("Ошибка: бэкенд не подключен")
             return
 
-        self.workout_manager.start(minutes)
+        if not self.workout_manager.start(minutes):
+            self.status_text = "Сначала завершите текущую тренировку"
+            return
         self.current_workout_duration = minutes
         self.status_text = f"Тренировка {minutes} минут"
 
@@ -176,9 +246,7 @@ class WorkoutScreen(BaseFitnessScreen):
             self.timer_event = None
 
         if self.workout_manager:
-            # Сбрасываем через storage напрямую
-            self.workout_manager.storage.reset_current_workout()
-            self.workout_manager.storage.save()
+            self.workout_manager.cancel()
 
         # Сбрасываем отображение
         self.timer_text = "00:00"
@@ -188,6 +256,7 @@ class WorkoutScreen(BaseFitnessScreen):
         self.update_today_stats()
 
         self.stop_heart_beat()
+        self.refresh_sets()
 
     def finish_workout(self):
         """Завершение тренировки"""
@@ -217,6 +286,8 @@ class WorkoutScreen(BaseFitnessScreen):
     # ТУТ НАСТРОЙКИ СЕРДЦА
     def start_heart_beat(self):
         """Запускает биение сердца (увеличивается и уменьшается)"""
+        if "heart_icon" not in self.ids:
+            return
         heart = self.ids.heart_icon
         Animation.cancel_all(heart)
 
@@ -229,6 +300,8 @@ class WorkoutScreen(BaseFitnessScreen):
 
     def stop_heart_beat(self):
         """Останавливает биение"""
+        if "heart_icon" not in self.ids:
+            return
         heart = self.ids.heart_icon
         Animation.cancel_all(heart)
 
@@ -274,6 +347,8 @@ class StatsScreen(BaseFitnessScreen):
     graph_values = ListProperty([0] * 7)
     goal_progress_text = StringProperty("0%")
     remaining_text = StringProperty("Осталось: 0 мин")
+    total_sets_text = StringProperty("0")
+    best_day_text = StringProperty("—")
 
     def on_enter(self):
         """Обновление статистики при входе на экран"""
@@ -299,6 +374,10 @@ class StatsScreen(BaseFitnessScreen):
         hours = int(total // 60)
         minutes = int(total % 60)
         self.total_text = f"{hours}ч {minutes}мин"
+        self.total_sets_text = str(int(stats.get("total_sets", 0)))
+        day_names = {"mon": "Пн", "tue": "Вт", "wed": "Ср", "thu": "Чт", "fri": "Пт", "sat": "Сб", "sun": "Вс"}
+        best_day = self.stats_manager._calculate_best_day(weekly) if total else None
+        self.best_day_text = day_names.get(best_day, "—")
 
         # Рассчитываем прогресс к цели
         if goal > 0:
@@ -322,6 +401,8 @@ class StatsScreen(BaseFitnessScreen):
             stats["weekly_minutes"] = {
                 d: 0 for d in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
             }
+            stats["total_week_minutes"] = 0
+            stats["best_day"] = None
             self.stats_manager.storage.update_stats(stats)
             self.stats_manager.storage.save()
             self.update_stats()
@@ -386,5 +467,7 @@ class SettingsScreen(BaseFitnessScreen):
             self.stats_manager.storage.get_stats()["weekly_minutes"] = {
                 d: 0 for d in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
             }
+            self.stats_manager.storage.get_stats()["total_week_minutes"] = 0
+            self.stats_manager.storage.get_stats()["best_day"] = None
             self.stats_manager.storage.save()
             self.show_status("Неделя сброшена")

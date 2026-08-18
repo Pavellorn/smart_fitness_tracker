@@ -1,172 +1,141 @@
 <StatsScreen>:
-    name: "stats"
+    name: 'stats'
     canvas.before:
         Color:
-            rgba: root.bg_color
+            rgba: .11, .13, .20, 1
         Rectangle:
-            size: self.size
             pos: self.pos
-
+            size: self.size
     BoxLayout:
         orientation: 'vertical'
-        padding: [30, 40, 30, 30]
-        spacing: 15
-
+        padding: [18, 22, 18, 16]
+        spacing: 12
         Label:
-            text: "СТАТИСТИКА"
-            font_size: '24sp'
+            text: 'Статистика'
+            font_size: '25sp'
             bold: True
-            color: root.txt_color
+            color: .96, .97, .98, 1
             size_hint_y: None
-            height: '60dp'
-
-        # РАСТЯГИВАЮЩИЙСЯ ОТСТУП — ТЕПЕРЬ ЗДЕСЬ
-        Widget:
-            size_hint_y: 1
-
-        # Основная карточка с данными
+            height: '40dp'
+            halign: 'left'
+            text_size: self.size
+        Label:
+            text: 'Неделя в цифрах'
+            font_size: '13sp'
+            color: .65, .68, .76, 1
+            size_hint_y: None
+            height: '22dp'
+            halign: 'left'
+            text_size: self.size
         BoxLayout:
-            orientation: 'vertical'
-            padding: [20, 20, 20, 15]
+            size_hint_y: None
+            height: '92dp'
             spacing: 10
+            Card:
+                orientation: 'vertical'
+                padding: [14, 10]
+                canvas.before:
+                    Color:
+                        rgba: .18, .21, .31, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [16,]
+                Label:
+                    text: 'ВСЕГО ПОДХОДОВ'
+                    color: .52, .57, .68, 1
+                    font_size: '10sp'
+                    halign: 'left'
+                    text_size: self.size
+                Label:
+                    text: root.total_sets_text
+                    color: .42, .78, .62, 1
+                    font_size: '30sp'
+                    bold: True
+                    halign: 'left'
+                    text_size: self.size
+            Card:
+                orientation: 'vertical'
+                padding: [14, 10]
+                canvas.before:
+                    Color:
+                        rgba: .18, .21, .31, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [16,]
+                Label:
+                    text: 'ЛУЧШИЙ ДЕНЬ'
+                    color: .52, .57, .68, 1
+                    font_size: '10sp'
+                    halign: 'left'
+                    text_size: self.size
+                Label:
+                    text: root.best_day_text
+                    color: .96, .97, .98, 1
+                    font_size: '30sp'
+                    bold: True
+                    halign: 'left'
+                    text_size: self.size
+        Card:
+            orientation: 'vertical'
+            padding: [16, 14]
+            spacing: 6
             canvas.before:
                 Color:
-                    rgba: 1, 1, 1, 1
+                    rgba: .18, .21, .31, 1
                 RoundedRectangle:
-                    size: self.size
                     pos: self.pos
-                    radius: [16, 16, 16, 16]
-
+                    size: self.size
+                    radius: [16,]
             Label:
-                text: "За неделю: " + root.total_text
-                font_size: '20sp'
-                color: root.txt_color
-                bold: True
+                text: 'АКТИВНОСТЬ ПО ДНЯМ'
+                color: .52, .57, .68, 1
+                font_size: '11sp'
                 size_hint_y: None
-                height: '30dp'
-
-            Label:
-                text: root.goal_progress_text
-                font_size: '32sp'
-                bold: True
-                color: root.txt_color
-                size_hint_y: None
-                height: '40dp'
-
-            Label:
-                text: root.remaining_text
-                font_size: '15sp'
-                color: root.txt_color
-                size_hint_y: None
-                height: '20dp'
-
-            # Виджет графика (столбики)
+                height: '18dp'
+                halign: 'left'
+                text_size: self.size
             WeekGraph:
                 id: week_graph
                 values: root.graph_values
-                size_hint_y: None
-                height: '140dp'
-
-            # Ряд с числами (минуты/км над каждым днем)
+                size_hint_y: .62
             BoxLayout:
-                orientation: 'horizontal'
                 size_hint_y: None
                 height: '20dp'
                 Label:
-                    text: str(int(root.graph_values[0])) if len(root.graph_values) > 0 else "0"
+                    text: 'Пн     Вт     Ср     Чт     Пт     Сб     Вс'
+                    color: .65, .68, .76, 1
                     font_size: '11sp'
-                    color: 0.298, 0.686, 0.314, 1
-                Label:
-                    text: str(int(root.graph_values[1])) if len(root.graph_values) > 1 else "0"
-                    font_size: '11sp'
-                    color: root.txt_color
-                Label:
-                    text: str(int(root.graph_values[2])) if len(root.graph_values) > 2 else "0"
-                    font_size: '11sp'
-                    color: root.txt_color
-                Label:
-                    text: str(int(root.graph_values[3])) if len(root.graph_values) > 3 else "0"
-                    font_size: '11sp'
-                    color: root.txt_color
-                Label:
-                    text: str(int(root.graph_values[4])) if len(root.graph_values) > 4 else "0"
-                    font_size: '11sp'
-                    color: root.txt_color
-                Label:
-                    text: str(int(root.graph_values[5])) if len(root.graph_values) > 5 else "0"
-                    font_size: '11sp'
-                    color: root.txt_color
-                Label:
-                    text: str(int(root.graph_values[6])) if len(root.graph_values) > 6 else "0"
-                    font_size: '11sp'
-                    color: root.txt_color
-
-            BoxLayout:
-                orientation: 'horizontal'
+                    halign: 'center'
+                    text_size: self.size
+            Label:
+                text: 'Цель недели: ' + root.goal_progress_text + '  ·  ' + root.remaining_text
+                color: .87, .89, .94, 1
+                font_size: '13sp'
                 size_hint_y: None
-                height: '25dp'
-                Label:
-                    text: "Пн"
-                    font_size: '13sp'
-                    color: root.txt_color
-                Label:
-                    text: "Вт"
-                    font_size: '13sp'
-                    color: root.txt_color
-                Label:
-                    text: "Ср"
-                    font_size: '13sp'
-                    color: root.txt_color
-                Label:
-                    text: "Чт"
-                    font_size: '13sp'
-                    color: root.txt_color
-                Label:
-                    text: "Пт"
-                    font_size: '13sp'
-                    color: root.txt_color
-                Label:
-                    text: "Сб"
-                    font_size: '13sp'
-                    color: root.txt_color
-                Label:
-                    text: "Вс"
-                    font_size: '13sp'
-                    color: root.txt_color
-
-            Widget:
-                size_hint_y: None
-                height: '10dp'
-
-            Button:
-                text: "Сбросить неделю"
-                background_normal: ''
-                background_color: 1.0, 0.596, 0.0, 1
-                size_hint_y: None
-                height: '45dp'
-                bold: True
-                on_release: root.reset_week()
-
-        # Нижнее меню навигации
+                height: '24dp'
+                halign: 'left'
+                text_size: self.size
+        Button:
+            text: 'СБРОСИТЬ НЕДЕЛЮ'
+            size_hint_y: None
+            height: '45dp'
+            background_color: .42, .27, .22, 1
+            on_release: root.reset_week()
+        Widget:
         BoxLayout:
             size_hint_y: None
-            height: '60dp'
-            spacing: 5
-
+            height: '52dp'
+            spacing: 8
             Button:
-                text: "Тренировка"
-                background_normal: ''
-                background_color: 0.2, 0.2, 0.3, 1
-                on_release: root.go_to("workout")
-
+                text: 'Тренировка'
+                background_color: .25, .29, .42, 1
+                on_release: root.go_to('workout')
             Button:
-                text: "Статистика"
-                background_normal: ''
-                background_color: 0.2, 0.7, 1, 1
-                bold: True
-
+                text: 'Статистика'
+                background_color: .18, .62, .43, 1
             Button:
-                text: "Настройки"
-                background_normal: ''
-                background_color: 0.2, 0.2, 0.3, 1
-                on_release: root.go_to("settings")
+                text: 'Настройки'
+                background_color: .25, .29, .42, 1
+                on_release: root.go_to('settings')
